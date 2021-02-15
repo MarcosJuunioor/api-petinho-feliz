@@ -27,15 +27,15 @@ class UsuarioControl extends CI_Controller {
      */
     public function cadastrarUsuario()
 	{    
-
         //o método abaixo retorna um objeto
         $dadosUsuario = json_decode(file_get_contents('php://input'));
         $dadosUsuario->senha = md5($dadosUsuario->senha);
-        
-        
-         
+                 
         $result = $this->UsuarioModel->cadastrarUsuario($dadosUsuario);
-        var_dump($result);
+
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+		echo json_encode(array("resultado"=>$result), JSON_UNESCAPED_UNICODE);
     }
 
     public function deletarUsuario()

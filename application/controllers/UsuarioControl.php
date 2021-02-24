@@ -50,11 +50,44 @@ class UsuarioControl extends CI_Controller {
 
     public function listarUsuarios()
 	{    
-        $questionario = $this->UsuarioModel->listarUsuarios();
+        session_start();
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+        if($_GET["token"] == $_SESSION["tokenAdmin"]){
+            $usuarios = $this->UsuarioModel->listarUsuarios();
+            echo json_encode(array("resultado"=>$usuarios), JSON_UNESCAPED_UNICODE);
+        }else{
+            echo json_encode(array("resultado"=>"sem permissão."), JSON_UNESCAPED_UNICODE);
+        }
+      
     }
 
     public function autenticarUsuario(){
-        
+        session_start();
+        $dadosUsuario = json_decode(file_get_contents('php://input'));
+        $dadosUsuario->senha = md5($dadosUsuario->senha);
+        $result = $this->UsuarioModel->consultarUsuarioPorEmailESenha($dadosUsuario->email, $dadosUsuario->senha);
+       
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+        if($result){
+            //gera token
+            $token = uniqid();
+            $token = md5($token);
+            if($dadosUsuario->email == "adminpetinhofeliz@gmail.com" && $dadosUsuario->senha == "13e554ff3ec02a3de6fca76e15299881"){
+                $_SESSION["tokenAdmin"] = $token;
+            }else{
+                $_SESSION["tokenDoador"]  = $token;
+            }
+            echo json_encode(array("token"=>$token), JSON_UNESCAPED_UNICODE);
+        }else{
+            
+            echo json_encode(array("token"=>$result), JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+    public function logout(){
+        //unset($_SESSION["newsession"]);
     }
 }
 

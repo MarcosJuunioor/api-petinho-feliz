@@ -73,10 +73,12 @@ class UsuarioModel extends CI_Model {
         }
     }
 
-    public function deletarUsuario()
+    public function deletarUsuario($email)
 	{    
         $this->db->trans_start(); 
-        $query_empresa = $this->db->query();
+        $query_empresa = $this->db->query("
+            DELETE FROM USUARIO WHERE email = '$email'
+        ");
         $this->db->trans_complete();
         
         if($this->db->trans_status() === TRUE){
@@ -88,10 +90,56 @@ class UsuarioModel extends CI_Model {
         }
     }
 
-    public function atualizarUsuario()
-	{    
+    public function atualizarUsuario($dadosUsuario, $emailAtual)
+{    
+        //Dados do usuário
+        $email = $dadosUsuario->email;
+        $senha =  md5($dadosUsuario->senha);
+        $tipoUsuario = $dadosUsuario->tipoUsuario;
+        $contato = $dadosUsuario->contato;
+        $tipoContato = $dadosUsuario->tipoContato;
+        $disponibilidadeDias = $dadosUsuario->disponibilidadeDias;
+        $disponibilidadeHoras = $dadosUsuario->disponibilidadeHoras;
+
         $this->db->trans_start(); 
-        $query_empresa = $this->db->query();
+        $scriptUpdateUsuario = "
+            UPDATE usuario u
+            INNER JOIN doador d
+            ON d.fk_usuario = u.id_usuario
+            INNER JOIN cuidador c
+            ON c.fk_doador = d.id_doador
+            SET 
+            u.email = '$email',
+            u.senha = '$senha',
+            d.contato = '$contato',
+            d.tipo_contato = '$tipoContato',
+            d.disponibilidade_dia = '$disponibilidadeDias',
+            d.disponibilidade_hora = '$disponibilidadeHoras',
+        ";
+
+        if($tipoUsuario == "cuidador"){
+            //caso seja cuidador
+            $nome = $dadosUsuario->nome;
+            $cpf = $dadosUsuario->cpf;
+            $genero = $dadosUsuario->genero;
+            $scriptUpdateUsuario.="
+                c.nome = '$nome',
+                c.cpf = '$cpf',
+                c.genero = '$genero'
+
+            ";
+        }else if($tipoUsuario == "estabelecimento"){
+            //caso seja estabelecimento
+            $empresa = $dadosUsuario->empresa;
+            $cnpj = $dadosUsuario->cnpj;
+            $scriptUpdateUsuario.="
+                e.empresa = '$empresa',
+                e.cnpj = '$cnpj'
+            ";
+        }
+        $scriptUpdateUsuario.="WHERE u.email = '$emailAtual'";
+
+        $query = $this->db->query($scriptUpdateUsuario);
         $this->db->trans_complete();
         
         if($this->db->trans_status() === TRUE){

@@ -31,21 +31,61 @@ class UsuarioControl extends CI_Controller {
         $dadosUsuario = json_decode(file_get_contents('php://input'));
         $dadosUsuario->senha = md5($dadosUsuario->senha);
                  
-        $result = $this->UsuarioModel->cadastrarUsuario($dadosUsuario);
+        $resultado = $this->UsuarioModel->cadastrarUsuario($dadosUsuario);
 
         header("Access-Control-Allow-Origin: *");
         header('Content-type: application/json');
-		echo json_encode(array("resultado"=>$result), JSON_UNESCAPED_UNICODE);
+		echo json_encode(array("resultado"=>$resultado), JSON_UNESCAPED_UNICODE);
     }
 
     public function deletarUsuario()
-	{    
-        $this->UsuarioModel->deletarUsuario();
+	{  
+        session_start();  
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+        $dadosUsuario = json_decode(file_get_contents('php://input')); 
+        $token = $dadosUsuario->token;
+        //Todos os usuários com cadastro têm acesso a deleção
+        if(isset($_SESSION["tokenAdmin"]) || isset($_SESSION["tokenDoador"])){
+            
+            if($token== $_SESSION["tokenAdmin"] || $token == $_SESSION["tokenDoador"]){
+            
+                 
+                $emailAtual = $dadosUsuario->emailAtual;
+                $resultado = $this->UsuarioModel->deletarUsuario($emailAtual);
+            
+                echo json_encode(array("resultado"=>$resultado), JSON_UNESCAPED_UNICODE);
+            }else{
+                echo json_encode(array("resultado"=>"token inválido"), JSON_UNESCAPED_UNICODE);        
+            }
+        }else{
+            echo json_encode(array("resultado"=>"sem permissão"), JSON_UNESCAPED_UNICODE);
+        }
+        
     }
 
     public function atualizarUsuario()
-	{    
-        $this->UsuarioModel->atualizarUsuario();
+	{  
+
+        session_start();
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+        $dadosUsuario = json_decode(file_get_contents('php://input')); 
+        $token = $dadosUsuario->token;
+        //Todos os usuários com cadastro têm acesso à atualização
+        if(isset($_SESSION["tokenAdmin"]) || isset($_SESSION["tokenDoador"])){
+            
+                if($token== $_SESSION["tokenAdmin"] || $token== $_SESSION["tokenDoador"]){
+                    $emailAtual = $dadosUsuario->emailAtual;
+                    $resultado = $this->UsuarioModel->atualizarUsuario($dadosUsuario, $emailAtual);
+                
+                    echo json_encode(array("resultado"=>$resultado), JSON_UNESCAPED_UNICODE);
+                }else{
+                    echo json_encode(array("resultado"=>"token inválido"), JSON_UNESCAPED_UNICODE);        
+                }
+        }else{
+            echo json_encode(array("resultado"=>"sem permissão"), JSON_UNESCAPED_UNICODE);
+        }
     }
 
     public function listarUsuarios()
@@ -53,11 +93,16 @@ class UsuarioControl extends CI_Controller {
         session_start();
         header("Access-Control-Allow-Origin: *");
         header('Content-type: application/json');
-        if($_GET["token"] == $_SESSION["tokenAdmin"]){
+        $dadosUsuario = json_decode(file_get_contents('php://input')); 
+        $token = $dadosUsuario->token;
+        //Só admin tem acesso a lista de usuários
+        if(isset($_SESSION["tokenAdmin"]) && ($token == $_SESSION["tokenAdmin"])){
+            
             $usuarios = $this->UsuarioModel->listarUsuarios();
             echo json_encode(array("resultado"=>$usuarios), JSON_UNESCAPED_UNICODE);
+            
         }else{
-            echo json_encode(array("resultado"=>"sem permissão."), JSON_UNESCAPED_UNICODE);
+            echo json_encode(array("resultado"=>"sem permissão ou token inválido"), JSON_UNESCAPED_UNICODE);
         }
       
     }
@@ -74,6 +119,7 @@ class UsuarioControl extends CI_Controller {
             //gera token
             $token = uniqid();
             $token = md5($token);
+
             if($dadosUsuario->email == "adminpetinhofeliz@gmail.com" && $dadosUsuario->senha == "13e554ff3ec02a3de6fca76e15299881"){
                 $_SESSION["tokenAdmin"] = $token;
             }else{
@@ -87,7 +133,21 @@ class UsuarioControl extends CI_Controller {
     }
 
     public function logout(){
-        //unset($_SESSION["newsession"]);
+        session_start();
+        header("Access-Control-Allow-Origin: *");
+        header('Content-type: application/json');
+
+        //Logout de acordo com o tipo do usuário
+        if(isset($_SESSION["tokenAdmin"])){
+            unset($_SESSION["tokenAdmin"]);
+            echo json_encode(array("resultado"=>true), JSON_UNESCAPED_UNICODE);
+        }else if(isset($_SESSION["tokenDoador"])){
+            unset($_SESSION["tokenDoador"]);
+            echo json_encode(array("resultado"=>true), JSON_UNESCAPED_UNICODE);
+        }else{
+            echo json_encode(array("resultado"=>false), JSON_UNESCAPED_UNICODE);
+        }
+        
     }
 }
 

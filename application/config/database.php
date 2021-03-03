@@ -75,10 +75,14 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => 'localhost',
+	/*'hostname' => 'localhost',
 	'username' => 'id16222630_adm_db_pf',
 	'password' => 'ZfXWpW{j-V5\{xEq',
-	'database' => 'id16222630_bd_petinho_feliz',
+	'database' => 'id16222630_bd_petinho_feliz', */
+	'hostname' => 'localhost',
+	'username' => 'root',
+	'password' => '',
+	'database' => 'bd_petinho',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
